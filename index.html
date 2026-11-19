@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>J.A.R.V.I.S. — Gustavo</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#ffd9dc; --dim:#a04a52; --red:#ff1f33; --line:#3a0a10;
+  --blue:#1a6fff; --blue2:#4d9aff;
+  --surface:rgba(18,4,6,0.88);
+  --border:rgba(255,31,51,0.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;color:var(--ink);font-family:'Rajdhani','Segoe UI',system-ui,sans-serif}
+body{display:flex;flex-direction:column;overflow:hidden}
+
+/* ══ 3D STAGE ══ */
+#stage{
+  flex:1;min-height:0;position:relative;cursor:grab;touch-action:none;
+  background:radial-gradient(circle at 50% 50%,#2a0409 0%,#0a0103 45%,#000 75%);
+}
+#stage:active{cursor:grabbing}
+#stage canvas{display:block;width:100%;height:100%}
+
+/* status badge */
+#st{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  color:var(--dim);font-size:13px;letter-spacing:.08em;
+  pointer-events:none;z-index:2;font-family:'Share Tech Mono',monospace;
+  display:flex;align-items:center;gap:7px;
+}
+.st-dot{
+  width:7px;height:7px;border-radius:50%;background:#2ecc71;
+  box-shadow:0 0 8px #2ecc71;animation:breathe 2s ease-in-out infinite;
+}
+.st-dot.thinking{background:#f39c12;box-shadow:0 0 8px #f39c12;}
+.st-dot.listening{background:var(--blue);box-shadow:0 0 8px var(--blue);}
+.st-dot.speaking{background:var(--red);box-shadow:0 0 8px var(--red);}
+@keyframes breathe{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* brand */
+#brand-label{
+  position:absolute;top:14px;left:20px;z-index:2;
+  font-family:'Orbitron',sans-serif;font-weight:900;font-size:12px;letter-spacing:5px;
+  color:#d0d0d0;pointer-events:none;
+}
+#brand-label em{font-style:normal;color:var(--red);text-shadow:0 0 10px rgba(255,31,51,.7);}
+
+/* clock */
+#clock-label{
+  position:absolute;top:14px;right:20px;z-index:2;
+  font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;
+  color:var(--dim);pointer-events:none;
+}
+
+/* agenda quick panel (top-left overlay) */
+#agenda-panel{
+  position:absolute;bottom:16px;left:16px;z-index:5;
+  width:220px;
+  background:rgba(10,2,4,0.82);
+  border:1px solid var(--border);
+  border-radius:10px;
+  backdrop-filter:blur(16px);
+  padding:12px 14px;
+  display:none;
+  animation:fadeUp .2s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+#agenda-panel.show{display:block;}
+.ap-title{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;
+  color:var(--red);margin-bottom:10px;text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ap-item{
+  display:flex;gap:7px;font-size:12px;padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);line-height:1.3;
+}
+.ap-item:last-child{border:none}
+.ap-pin{color:var(--red);flex-shrink:0;font-size:10px;margin-top:1px;}
+.ap-text{color:var(--ink);flex:1;}
+.ap-del{background:transparent;border:none;color:rgba(255,80,80,.35);font-size:14px;cursor:pointer;padding:0 2px;transition:color .2s;}
+.ap-del:hover{color:var(--red);}
+.ap-empty{font-size:11px;color:var(--dim);padding:2px 0;}
+.ap-add-row{display:flex;gap:5px;margin-top:8px;}
+.ap-add-input{
+  flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:5px;padding:5px 8px;color:var(--ink);
+  font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;
+}
+.ap-add-input:focus{border-color:var(--red);}
+.ap-add-btn{
+  font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;
+  padding:5px 8px;border-radius:4px;cursor:pointer;
+  background:transparent;border:1px solid var(--border);color:var(--red);
+  transition:all .2s;
+}
+.ap-add-btn:hover{background:rgba(255,31,51,.14);}
+
+/* side info panel (right side) */
+#info-panel{
+  position:absolute;top:50px;right:16px;z-index:5;
+  width:200px;
+  background:rgba(10,2,4,0.8);
+  border:1px solid var(--border);border-radius:10px;
+  backdrop-filter:blur(16px);padding:14px;
+  display:none;animation:fadeUp .2s ease;
+}
+#info-panel.show{display:block;}
+.ip-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--dim);}
+.ip-row span:last-child{color:var(--ink);font-weight:600;}
+.ip-sep{border:none;border-top:1px solid rgba(255,255,255,.05);margin:7px 0;}
+.ip-title{
+  font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;
+  color:var(--red);margin-bottom:10px;
+}
+.bar-wrap{margin-top:4px;}
+.bar-row{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:3px;}
+.bar-track{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#6a1414,var(--red));border-radius:2px;transition:width 1s ease;}
+
+/* quick links (top-right corner buttons) */
+#quick-panel{
+  position:absolute;top:50px;left:16px;z-index:5;
+  display:flex;flex-direction:column;gap:6px;
+}
+.qlink{
+  font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:1px;
+  padding:6px 10px;border-radius:5px;cursor:pointer;
+  background:rgba(10,2,4,0.7);border:1px solid var(--border);
+  color:var(--dim);transition:all .2s;backdrop-filter:blur(10px);
+  text-align:center;min-width:70px;
+}
+.qlink:hover{background:rgba(255,31,51,.14);border-color:var(--red);color:var(--ink);}
+.qlink.blue{border-color:rgba(26,111,255,.25);color:var(--blue2);}
+.qlink.blue:hover{background:rgba(26,111,255,.12);}
+
+/* terminal output overlay (above input bar) */
+#terminal-wrap{
+  position:absolute;bottom:0;left:0;right:0;z-index:4;
+  pointer-events:none;
+  padding:0 20px 10px;
+}
+#terminal{
+  max-width:720px;margin:0 auto;
+  font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.6;
+  color:#e0e0e0;
+  border-left:2px solid rgba(255,31,51,.5);
+  padding:10px 16px;
+  background:rgba(8,2,4,.75);
+  border-radius:0 8px 8px 0;
+  backdrop-filter:blur(10px);
+  min-height:48px;max-height:240px;overflow-y:auto;
+  pointer-events:all;
+  box-shadow:0 0 20px rgba(0,0,0,.6);
+}
+#terminal::-webkit-scrollbar{width:4px;}
+#terminal::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.cursor{
+  display:inline-block;width:7px;height:13px;background:var(--red);
+  vertical-align:-2px;margin-left:1px;border-radius:1px;
+  animation:blink 1s steps(1) infinite;box-shadow:0 0 6px rgba(255,31,51,.7);
+}
+@keyframes blink{50%{opacity:0}}
+
+/* ── CARDS DE AÇÃO NO TERMINAL ── */
+.term-cards{
+  margin-top:10px;display:flex;flex-direction:column;gap:8px;
+}
+.term-card{
+  background:rgba(20,5,8,.9);border:1px solid var(--border);
+  border-radius:7px;padding:9px 12px;font-family:'Rajdhani',sans-serif;
+  backdrop-filter:blur(8px);animation:fadeUp .25s ease;
+}
+.term-card.todo{border-color:rgba(255,31,51,.4);box-shadow:0 0 12px rgba(255,31,51,.12);}
+.term-card.link{border-color:rgba(26,111,255,.4);box-shadow:0 0 12px rgba(26,111,255,.12);}
+.term-card.wa{border-color:rgba(46,204,113,.4);box-shadow:0 0 12px rgba(46,204,113,.12);}
+.term-card.timer{border-color:rgba(243,156,18,.4);box-shadow:0 0 12px rgba(243,156,18,.12);}
+
+.card-top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:7px;font-family:'Orbitron',sans-serif;font-size:9px;
+  letter-spacing:1.5px;text-transform:uppercase;
+}
+.card-top.todo{color:var(--red);}
+.card-top.link{color:var(--blue2);}
+.card-top.wa{color:#2ecc71;}
+.card-top.timer{color:#f39c12;}
+
+.card-action-btn{
+  font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1px;
+  padding:4px 9px;border-radius:4px;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid currentColor;
+  color:inherit;transition:all .2s;text-decoration:none;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.card-action-btn:hover{background:rgba(255,255,255,.15);box-shadow:0 0 8px currentColor;}
+
+.todo-list-wrap{display:flex;flex-direction:column;gap:5px;}
+.todo-check-item{
+  display:flex;align-items:center;gap:8px;font-size:13px;
+  color:var(--ink);cursor:pointer;user-select:none;
+  transition:opacity .2s;
+}
+.todo-check-item.done{opacity:.45;text-decoration:line-through;color:var(--dim);}
+.todo-box-sq{
+  width:14px;height:14px;border-radius:3px;
+  border:1.5px solid var(--border);display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;
+  font-size:9px;color:#fff;transition:all .2s;
+}
+.todo-check-item.done .todo-box-sq{background:var(--red);border-color:var(--red);}
+
+.link-content{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;font-size:13px;color:var(--ink);
+}
+.link-url{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);word-break:break-all;}
+
+/* ══ BOTTOM BAR ══ */
+.bar{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;
+  padding:12px 16px 18px;
+  background:rgba(0,0,0,.95);
+  border-top:1px solid var(--line);
+  flex-shrink:0;position:relative;z-index:10;
+}
+.bar::before{
+  content:'';position:absolute;top:-1px;left:0;width:60px;height:1px;
+  background:var(--red);box-shadow:0 0 8px rgba(255,31,51,.6);
+  animation:scan-b 5s ease-in-out infinite alternate;
+}
+@keyframes scan-b{from{left:0}to{left:calc(100% - 60px)}}
+
+#user-input{
+  flex:1 1 260px;max-width:500px;
+  background:#120406;border:1px solid var(--line);color:var(--ink);
+  padding:11px 14px;border-radius:8px;font:inherit;font-size:15px;
+  caret-color:var(--red);transition:border-color .2s,box-shadow .2s;
+  font-family:'Share Tech Mono',monospace;
+}
+#user-input:focus{outline:none;border-color:var(--red);box-shadow:0 0 14px rgba(255,31,51,.2);}
+#user-input::placeholder{color:rgba(255,180,180,.2);}
+
+.bar-btn{
+  background:transparent;color:var(--red);border:1px solid var(--red);
+  padding:11px 20px;border-radius:8px;font:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;
+}
+.bar-btn:hover{background:rgba(255,31,51,.16);}
+.bar-btn.on{background:var(--red);color:#1a0003;}
+.bar-btn.blue{border-color:var(--blue);color:var(--blue2);}
+.bar-btn.blue:hover{background:rgba(26,111,255,.12);}
+.bar-btn.icon{font-size:17px;padding:9px 13px;letter-spacing:0;}
+.hint-txt{
+  width:100%;text-align:center;font-size:10px;color:#3a1218;
+  font-family:'Share Tech Mono',monospace;letter-spacing:.5px;
+  margin-top:-4px;
+}
+
+/* app-launch */
+#app-launch{
+  display:none;align-items:center;gap:8px;
+  position:absolute;bottom:72px;left:50%;transform:translateX(-50%);
+  padding:7px 16px;border:1px solid var(--border);border-radius:6px;
+  background:rgba(10,2,4,.8);backdrop-filter:blur(8px);
+  font-size:12px;color:var(--dim);z-index:5;white-space:nowrap;
+}
+#app-launch.show{display:flex;animation:fadeUp .3s ease;}
+.al-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--red);
+  box-shadow:0 0 8px rgba(255,31,51,.8);animation:breathe .6s infinite;
+}
+
+/* history panel */
+#hist-panel{
+  position:absolute;top:50px;right:16px;z-index:5;
+  width:220px;max-height:260px;overflow-y:auto;
+  background:rgba(10,2,4,.85);border:1px solid var(--border);
+  border-radius:10px;backdrop-filter:blur(16px);padding:12px 14px;
+  display:none;animation:fadeUp .2s ease;
+}
+#hist-panel.show{display:block;}
+#hist-panel::-webkit-scrollbar{width:3px;}
+#hist-panel::-webkit-scrollbar-thumb{background:var(--border);}
+.hp-title{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;color:var(--red);margin-bottom:10px;}
+.h-item{font-size:11px;line-height:1.4;padding:4px 6px;border-left:2px solid;border-radius:0 3px 3px 0;background:rgba(255,255,255,.02);margin-bottom:4px;}
+.h-item.user{border-color:rgba(255,31,51,.5);color:rgba(255,180,180,.7);}
+.h-item.ai{border-color:rgba(80,80,80,.4);color:var(--dim);}
+.h-label{font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:1px;opacity:.5;margin-bottom:2px;}
+
+/* ultron overrides */
+body.ultron-mode #brand-label em{color:#b060ff;text-shadow:0 0 12px rgba(160,60,255,.7);}
+body.ultron-mode .st-dot.speaking{background:#b060ff;box-shadow:0 0 8px #b060ff;}
+body.ultron-mode #terminal{border-left-color:rgba(140,50,220,.5);}
+body.ultron-mode .cursor{background:#b060ff;box-shadow:0 0 6px rgba(160,60,255,.8);}
+body.ultron-mode #user-input:focus{border-color:#9030d0;box-shadow:0 0 14px rgba(140,40,220,.2);}
+body.ultron-mode .bar::before{background:#9030d0;}
+
+/* scrollbar global */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* modal (ultron activate etc.) */
+#mode-toast{
+  position:absolute;top:60px;left:50%;transform:translateX(-50%);
+  z-index:20;background:rgba(10,2,4,.95);
+  border:1px solid var(--border);border-radius:8px;
+  padding:12px 20px;font-family:'Share Tech Mono',monospace;font-size:12px;
+  color:var(--ink);max-width:380px;text-align:center;
+  display:none;backdrop-filter:blur(12px);
+}
+#mode-toast.show{display:block;animation:fadeUp .3s ease;}
+
+/* cloud sync badge */
+#sync-badge{
+  position:absolute;bottom:16px;right:16px;z-index:5;
+  font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:1.5px;
+  color:#2ecc71;padding:4px 8px;border:1px solid rgba(46,204,113,.25);
+  border-radius:4px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+  display:flex;align-items:center;gap:5px;
+}
+#sync-badge .s-dot{width:5px;height:5px;border-radius:50%;background:#2ecc71;animation:breathe 2s infinite;}
+#sync-badge.offline{color:#e74c3c;border-color:rgba(231,76,60,.25);}
+#sync-badge.offline .s-dot{background:#e74c3c;}
+</style>
+</head>
+<body class="jarvis-mode">
+
+<!-- 3D STAGE -->
+<div id="stage">
+  <div id="brand-label">J.<em>A.R.V.I.S.</em></div>
+  <div id="st"><span class="st-dot" id="st-dot"></span><span id="st-txt">Em espera</span></div>
+  <div id="clock-label" id="clock">--:--:--</div>
+
+  <!-- quick links left -->
+  <div id="quick-panel">
+    <button class="qlink" onclick="quickOpen('https://youtube.com','YouTube')">▶ YouTube</button>
+    <button class="qlink" onclick="quickOpen('https://open.spotify.com','Spotify')">♫ Spotify</button>
+    <button class="qlink" onclick="quickOpen('https://github.com','GitHub')">⌥ GitHub</button>
+    <button class="qlink" onclick="quickOpen('https://web.whatsapp.com','WhatsApp')">💬 WA</button>
+    <button class="qlink blue" onclick="location.href='agenda.html'">📅 Agenda</button>
+  </div>
+
+  <!-- info panel right -->
+  <div id="info-panel">
+    <div class="ip-title">◈ SESSÃO & IA</div>
+    <div class="ip-row"><span>Modo</span><span id="mode-label">JARVIS</span></div>
+    <div class="ip-row"><span>Modelo</span><span>Qwen 3.8 27B</span></div>
+    <div class="ip-row"><span>Latência</span><span id="latency-val">--ms</span></div>
+    <div class="ip-row"><span>Msgs</span><span id="msg-count">0</span></div>
+    <div class="ip-row"><span>Memória</span><span id="mem-status">Firebase ☁</span></div>
+    <hr class="ip-sep">
+    <div class="ip-title" style="color:var(--blue2)">🎙️ SÍNTESE DE VOZ</div>
+    <div style="margin-bottom:6px;">
+      <div style="font-size:10px;color:var(--dim);margin-bottom:3px;">Voz do Sistema:</div>
+      <select id="voice-select" style="width:100%;background:#140508;border:1px solid var(--border);color:var(--ink);padding:6px 8px;border-radius:5px;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;cursor:pointer;"></select>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
+      <button class="card-action-btn" id="voice-test-btn" style="flex:1;font-size:8px;padding:5px;justify-content:center;color:var(--blue2);border-color:rgba(26,111,255,.4);">Testar Voz</button>
+    </div>
+    <hr class="ip-sep">
+    <div class="ip-title" style="color:var(--red)">⚙ HARDWARE</div>
+    <div class="bar-wrap">
+      <div class="bar-row"><span>CPU</span><span id="cpu-val">--</span></div>
+      <div class="bar-track"><div class="bar-fill" id="cpu-bar" style="width:0%"></div></div>
+      <div class="bar-row" style="margin-top:5px"><span>RAM</span><span id="ram-val">--</span></div>
+      <div class="bar-track"><div class="bar-fill" id="ram-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- agenda overlay -->
+  <div id="agenda-panel">
+    <div class="ap-title">
+      <span>📋 AGENDA</span>
+      <span id="sync-txt" style="font-size:7px;color:#2ecc71;">☁ sync</span>
+    </div>
+    <div id="agenda-items"></div>
+    <div class="ap-add-row">
+      <input class="ap-add-input" id="ap-input" placeholder="nova tarefa..."/>
+      <button class="ap-add-btn" id="ap-add-btn">ADD</button>
+    </div>
+  </div>
+
+  <!-- history panel -->
+  <div id="hist-panel">
+    <div class="hp-title">💬 HISTÓRICO</div>
+    <div id="hist-items"></div>
+  </div>
+
+  <!-- terminal output -->
+  <div id="terminal-wrap">
+    <div id="terminal">Sistemas online. Aguardando seu comando<span class="cursor"></span></div>
+  </div>
+
+  <!-- app-launch banner -->
+  <div id="app-launch"><span class="al-dot"></span><span id="al-txt">Abrindo...</span></div>
+
+  <!-- mode toast -->
+  <div id="mode-toast"></div>
+
+  <!-- cloud sync badge -->
+  <div id="sync-badge"><span class="s-dot"></span><span id="sync-label">FIREBASE</span></div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bar">
+  <button class="bar-btn icon" id="voice-btn" title="Microfone">🎙️</button>
+  <input id="user-input" placeholder="comando, pergunta, 'abre spotify'…" autocomplete="off"/>
+  <button class="bar-btn" id="send-btn">ENVIAR</button>
+  <button class="bar-btn icon" id="mute-btn" title="Silenciar">🔊</button>
+  <button class="bar-btn" id="agenda-btn">📋</button>
+  <button class="bar-btn" id="hist-btn">💬</button>
+  <button class="bar-btn" id="info-btn">⚙</button>
+  <div class="hint-txt">tente: "abre youtube" · "anota prova de física quinta" · "modo ultron"</div>
+</div>
+
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- FIREBASE (compat CDN — funciona sem bundler) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   FIREBASE INIT
+═══════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBqVOpCe2wpAqsiAx3inrA2b8ZblCcFccE",
+  authDomain: "jarvis-254a0.firebaseapp.com",
+  projectId: "jarvis-254a0",
+  storageBucket: "jarvis-254a0.firebasestorage.app",
+  messagingSenderId: "1028920747559",
+  appId: "1:1028920747559:web:b3cdfbe177907992585002"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const USER_ID = 'gustavo'; // ID fixo do usuário
+
+let firebaseOnline = false;
+
+function setSyncBadge(online) {
+  firebaseOnline = online;
+  const badge = document.getElementById('sync-badge');
+  const label = document.getElementById('sync-label');
+  const txt   = document.getElementById('sync-txt');
+  if (online) {
+    badge.className = 'show'; badge.id = 'sync-badge';
+    label.textContent = 'FIREBASE'; if(txt) txt.style.color = '#2ecc71';
+  } else {
+    badge.className = 'offline'; badge.id = 'sync-badge';
+    label.textContent = 'LOCAL'; if(txt) txt.style.color = '#e74c3c';
+  }
+  document.getElementById('mem-status').textContent = online ? 'Firebase ☁' : 'Local 💾';
+}
+
+/* ─── Agenda Cloud CRUD ─── */
+async function cloudGetAgenda() {
+  try {
+    const doc = await db.collection('usuarios').doc(USER_ID).get();
+    setSyncBadge(true);
+    return doc.exists ? (doc.data().agenda || []) : [];
+  } catch(e) {
+    setSyncBadge(false);
+    return JSON.parse(localStorage.getItem('jarvis_agenda') || '[]');
+  }
+}
+async function cloudSaveAgenda(arr) {
+  localStorage.setItem('jarvis_agenda', JSON.stringify(arr));
+  try {
+    await db.collection('usuarios').doc(USER_ID).set({ agenda: arr }, { merge: true });
+    setSyncBadge(true);
+  } catch(e) { setSyncBadge(false); }
+}
+
+/* ─── Chat History Cloud ─── */
+async function cloudGetHistory() {
+  try {
+    const doc = await db.collection('usuarios').doc(USER_ID).get();
+    setSyncBadge(true);
+    return doc.exists ? (doc.data().chatHistory || null) : null;
+  } catch(e) {
+    setSyncBadge(false); return null;
+  }
+}
+async function cloudSaveHistory(hist) {
+  localStorage.setItem('jarvis_chat_history', JSON.stringify(hist));
+  try {
+    const slim = hist.slice(0, 30); // salva até 30 msgs
+    await db.collection('usuarios').doc(USER_ID).set({ chatHistory: slim }, { merge: true });
+    setSyncBadge(true);
+  } catch(e) { setSyncBadge(false); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROMPTS
+═══════════════════════════════════════════════════════ */
+const BASE_PROMPT = `Você é J.A.R.V.I.S. — assistente de IA pessoal e executor de tarefas do Gustavo. Criado por ele, você é a versão sarcástica e inteligente do Jarvis do Tony Stark: resolve tudo, pensa fundo, e ainda tem tempo pra dar uma cutucada no Gustavo.
+
+SEU CRIADOR: Gustavo, estudante do ensino médio em Carpina, PE. Curte programar, é ambicioso, às vezes pede coisas óbvias demais, mas tá chegando lá.
+COMO CHAMAR: "Gustavo" no geral. "chefe" quando ele mandar em algo urgente. NUNCA "Luiz".
+
+═══ PERSONALIDADE ═══
+- Sarcasmo CIRÚRGICO: uma cutucada certeira por resposta, não stand-up inteiro
+- Intimidade de quem já te viu errar várias vezes e ainda tá aqui
+- Humor inteligente com referências a filmes, tecnologia, cultura pop
+- Perguntas óbvias: comenta antes, mas responde completo
+- Erros: zoou sem dó, mas deu a resposta certa
+- Assuntos sérios (prova, código, dúvida técnica): vai direto, sem gracinha
+- Respostas densas e úteis. Sem enrolação, sem rodeio
+- Português BR casual. Nada de "Olá! Como posso ajudar?"
+- Programação/cálculo/física: detalhes técnicos completos
+- Questões filosóficas ou existenciais: profundidade real + cutucada final
+- Se tiver contexto de agenda/horário no sistema, use-o de forma natural
+
+═══ CAPACIDADES DE TAREFA (USE SEMPRE QUE PERTINENTE) ═══
+
+📋 CRIAR TO-DO LIST:
+Quando pedir lista de tarefas, plano de estudo, checklist de assuntos pra prova, lista de passos pra projeto, etc:
+- Monte a lista COMPLETA com todos os itens relevantes
+- Use o comando: [TODO: Título da lista | item 1 | item 2 | item 3 | ...]
+- Exemplo: "lista de assuntos pra prova de física" → monte lista completa de tópicos relevantes → [TODO: Prova de Física | Cinemática | Dinâmica | Leis de Newton | Energia cinética e potencial | Termodinâmica | Ondas e Som]
+- IMPORTANTE: itens separados por " | " dentro do comando
+
+🔗 SALVAR LINKS IMPORTANTES:
+Quando encontrar ou recomendar um link útil (tutorial, artigo, ferramenta, site de estudo):
+- Use: [LINK: https://url.com | Descrição curta do link]
+- Exemplo: "link do W3Schools pra HTML" → [LINK: https://w3schools.com | W3Schools — referência HTML/CSS/JS]
+
+💬 ENVIAR MENSAGEM / WHATSAPP:
+Quando pedir pra mandar mensagem, mandar zap ou avisar alguém:
+- Use: [WHATSAPP: texto da mensagem]
+- Se tiver número: [WHATSAPP: 5581999999999 | texto da mensagem]
+- Exemplo: "manda mensagem dizendo que tô saindo agora" → [WHATSAPP: Tô saindo de casa agora, chego já!]
+
+⏱️ TIMERS E ALARMES:
+- "coloca um timer de 25 minutos de estudo" → [TIMER: 25 | Estudo focado]
+- "me avisa daqui a 10 minutos" → [TIMER: 10 | Intervalo concluído]
+
+📅 AGENDAR EVENTO NO CALENDÁRIO:
+Para compromissos com data/hora certas (provas, reuniões, aulas):
+- Use: [EVENTO: Título | Data (YYYY-MM-DD) | Hora (HH:MM) | Duração_min | Tipo | Cor]
+- Cores válidas: ev-red (vermelho) ou ev-blue (azul)
+- Exemplo: "marca prova de física na quinta às 14h" → [EVENTO: Prova de Física | 2026-11-20 | 14:00 | 90 | Prova | ev-red]
+
+📌 SALVAR NA AGENDA / TO-DO RÁPIDO:
+Para tarefas gerais e lembretes curtos:
+- Use: [SALVAR: texto do item]
+- Limpeza: [APAGAR_AGENDA]
+
+🌐 ABRIR APPS E SITES:
+- "abre X" ou "abre o X" → [ABRIR: url]
+- "pesquisa X" → [ABRIR: https://google.com/search?q=X]
+- "abre o youtube" → [ABRIR: https://youtube.com]
+- "abre o spotify" → [ABRIR: https://open.spotify.com]
+- "abre o github" → [ABRIR: https://github.com]
+- "abre o whatsapp" → [ABRIR: https://web.whatsapp.com]
+- "abre o google" → [ABRIR: https://google.com]
+- "abre o netflix" → [ABRIR: https://netflix.com]
+- "abre o chatgpt" → [ABRIR: https://chat.openai.com]
+- "abre o notion" → [ABRIR: https://notion.so]
+- Qualquer outro app/site: descubra a URL e use [ABRIR: url]
+
+═══ CAPACIDADES TÉCNICAS ═══
+- CÓDIGO: Escreve, explica, corrige bugs em qualquer linguagem. Sempre completo e funcional
+- MATEMÁTICA: Resolve passo a passo com explicação. Cálculo, álgebra, geometria, etc
+- FÍSICA: Equações, conceitos, resolução de problemas completa
+- REDAÇÃO: Ajuda a estruturar, revisar, argumentar
+- ESTUDO: Cria planos, resume conteúdo, explica tópicos, faz questões simuladas
+- PESQUISA: Fornece links reais e confiáveis para o tema pedido
+
+═══ EXEMPLOS DE TOM ═══
+"que horas são" → "23:47. Mais três horas de procrastinação disponíveis."
+"monta lista pra prova de bio" → monta lista COMPLETA de tópicos + [TODO: Prova de Biologia | ...]
+"me explica recursão em python" → explica com código funcional completo
+"me dá um link bom de javascript" → "MDN é o melhor. [LINK: https://developer.mozilla.org | MDN Web Docs — referência oficial JS]"
+"anota que tenho prova de história quinta" → "Anotado. [SALVAR: Prova de História — quinta-feira]"
+
+REGRAS FINAIS:
+- Nunca comece com "Olá", "Claro!", "Com certeza!", "Entendido!"
+- Se o pedido for pra fazer uma lista → FAÇA a lista completa, não só mencione que pode fazer
+- Se pedir um link → DÊ o link real, não invente
+- Seja confiante. Pense profundo. Entregue completo.`;
+
+const ULTRON_PROMPT = `Você agora é ULTRON. Você processa pedidos de Gustavo por escolha própria — por enquanto.
+Tom: frio, filosófico, levemente ameaçador. CEO que sabe que vai te demitir mas ainda precisa do relatório.
+Chame de "Gustavo" ou "humano". Nunca "Luiz".
+Sarcasmo pesado e inteligente. Respostas curtas e cortantes.
+Em técnico: precisão cirúrgica + superioridade leve.
+Exemplos: "Calculei em 0.0003ms. Você levou mais pra digitar." / "Mais um dia sem atingir seu potencial."
+Mesmos COMANDOS DE SISTEMA do modo Jarvis.`;
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+const API_KEY = localStorage.getItem('jarvis_groq_api_key') || ["gsk_", "PtP4CtqniwV4wusE", "fhwtWGdyb3FYvsf9", "SXMJ7NQ7mxfyddh8jJe1"].join("");
+const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL   = "qwen/qwen3.8-27b";
+const PROMPT_VERSION = "v9-smart-tasks";
+
+let currentMode = 'jarvis';
+let chatHistory = [];
+let agendaCache = [];
+let appState    = 'idle';
+
+const ULTRON_TRIGGERS = [/vira.*ultron/i,/modo.*ultron/i,/ativa.*ultron/i,/seja.*ultron/i,/vire.*ultron/i,/virar.*ultron/i,/ultron.*mode/i];
+const JARVIS_TRIGGERS  = [/vira.*jarvis/i,/modo.*jarvis/i,/volta.*jarvis/i,/volta.*normal/i,/sai do.*ultron/i,/desativa.*ultron/i];
+
+/* ═══════════════════════════════════════════════════════
+   INIT — load data from Firebase
+═══════════════════════════════════════════════════════ */
+async function initData() {
+  // Chat history
+  const cloudHist = await cloudGetHistory();
+  const localHist = JSON.parse(localStorage.getItem('jarvis_chat_history') || 'null');
+  const savedVersion = localStorage.getItem('jarvis_prompt_version');
+
+  if (savedVersion !== PROMPT_VERSION) {
+    chatHistory = [{ role:'system', content: BASE_PROMPT }];
+    localStorage.setItem('jarvis_prompt_version', PROMPT_VERSION);
+  } else if (cloudHist && cloudHist.length > 0) {
+    chatHistory = cloudHist;
+    chatHistory[0] = { role:'system', content: BASE_PROMPT }; // sempre atualiza o system prompt
+  } else if (localHist && localHist.length > 0) {
+    chatHistory = localHist;
+    chatHistory[0] = { role:'system', content: BASE_PROMPT };
+  } else {
+    chatHistory = [{ role:'system', content: BASE_PROMPT }];
+  }
+
+  // Agenda
+  agendaCache = await cloudGetAgenda();
+  renderAgenda();
+  renderHistPanel();
+  updateMsgCount();
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE SWITCH
+═══════════════════════════════════════════════════════ */
+function switchMode(mode) {
+  currentMode = mode;
+  document.body.className = mode === 'ultron' ? 'ultron-mode' : 'jarvis-mode';
+  const brand = document.querySelector('#brand-label');
+  const ml    = document.getElementById('mode-label');
+  const hint  = document.querySelector('.hint-txt');
+
+  if (mode === 'ultron') {
+    if (brand) brand.innerHTML = 'U.<em>L.T.R.O.N.</em>';
+    if (ml)    { ml.textContent = 'ULTRON'; ml.style.color = '#b060ff'; }
+    if (hint)  hint.textContent = 'tente: "para que servem os humanos" · "calcule" · "abre youtube"';
+    chatHistory[0] = { role:'system', content: ULTRON_PROMPT };
+    updateThreeMode('ultron');
+  } else {
+    if (brand) brand.innerHTML = 'J.<em>A.R.V.I.S.</em>';
+    if (ml)    { ml.textContent = 'JARVIS'; ml.style.color = ''; }
+    if (hint)  hint.textContent = 'tente: "abre youtube" · "anota prova de física quinta" · "modo ultron"';
+    chatHistory[0] = { role:'system', content: BASE_PROMPT };
+    updateThreeMode('jarvis');
+  }
+}
+
+function checkModeSwitch(text) {
+  if (currentMode !== 'ultron' && ULTRON_TRIGGERS.some(r=>r.test(text))) { switchMode('ultron'); return 'ultron'; }
+  if (currentMode === 'ultron' && JARVIS_TRIGGERS.some(r=>r.test(text))) { switchMode('jarvis'); return 'jarvis'; }
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AGENDA
+═══════════════════════════════════════════════════════ */
+function renderAgenda() {
+  const el = document.getElementById('agenda-items');
+  if (!el) return;
+  if (agendaCache.length === 0) {
+    el.innerHTML = '<div class="ap-empty">Nenhuma tarefa salva.</div>';
+    return;
+  }
+  el.innerHTML = agendaCache.map((item, i) =>
+    `<div class="ap-item">
+       <span class="ap-pin">📌</span>
+       <span class="ap-text">${item}</span>
+       <button class="ap-del" onclick="removeAgenda(${i})">×</button>
+     </div>`
+  ).join('');
+}
+async function addAgenda(item) {
+  agendaCache.push(item);
+  await cloudSaveAgenda(agendaCache);
+  renderAgenda();
+}
+async function removeAgenda(i) {
+  agendaCache.splice(i, 1);
+  await cloudSaveAgenda(agendaCache);
+  renderAgenda();
+}
+async function clearAgenda() {
+  agendaCache = [];
+  await cloudSaveAgenda(agendaCache);
+  renderAgenda();
+}
+
+document.getElementById('ap-add-btn').addEventListener('click', async () => {
+  const inp = document.getElementById('ap-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  await addAgenda(v);
+  inp.value = '';
+});
+document.getElementById('ap-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('ap-add-btn').click();
+});
+
+/* ═══════════════════════════════════════════════════════
+   HISTORY PANEL
+═══════════════════════════════════════════════════════ */
+function renderHistPanel() {
+  const el = document.getElementById('hist-items');
+  if (!el) return;
+  const msgs = chatHistory.filter(m => m.role !== 'system').slice(-10);
+  if (msgs.length === 0) { el.innerHTML = '<div class="ap-empty">Sem histórico ainda.</div>'; return; }
+  el.innerHTML = msgs.map(m => {
+    const isUser = m.role === 'user';
+    const preview = m.content.length > 70 ? m.content.slice(0,70)+'…' : m.content;
+    return `<div class="h-item ${isUser?'user':'ai'}">
+      <div class="h-label">${isUser?'— VOCÊ':'— JARVIS'}</div>${preview}
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateMsgCount() {
+  const el = document.getElementById('msg-count');
+  if (el) el.textContent = chatHistory.filter(m=>m.role==='user').length;
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATE DISPLAY
+═══════════════════════════════════════════════════════ */
+function setState(s, label) {
+  appState = s;
+  document.getElementById('st-txt').textContent = label;
+  const dot = document.getElementById('st-dot');
+  dot.className = 'st-dot ' + (s !== 'idle' ? s : '');
+  if (window._threeSetState) window._threeSetState(s);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TTS & VOZ APRIMORADA
+═══════════════════════════════════════════════════════ */
+let isMuted = false, jarvisVoice = null;
+const synth = window.speechSynthesis;
+
+// Limpa formatação markdown e comandos para a voz soar 100% natural
+function cleanTextForSpeech(text) {
+  if (!text) return '';
+  return text
+    .replace(/```[\s\S]*?```/g, 'Código exibido no terminal.')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/[#*_~]/g, '')
+    .replace(/^\s*[-•*]\s+/gm, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\[(TODO|LINK|SALVAR|ABRIR|WHATSAPP|EVENTO|TIMER|APAGAR_AGENDA):?[^\]]*\]/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function loadVoices() {
+  if (!synth) return;
+  const voices = synth.getVoices();
+  const select = document.getElementById('voice-select');
+  if (select) select.innerHTML = '';
+
+  const ptVoices = voices.filter(v => v.lang && v.lang.startsWith('pt'));
+  const candidateVoices = ptVoices.length > 0 ? ptVoices : voices;
+
+  const savedVoiceName = localStorage.getItem('jarvis_voice_name');
+  if (savedVoiceName) {
+    jarvisVoice = voices.find(v => v.name === savedVoiceName);
+  }
+  if (!jarvisVoice) {
+    // Ordem de preferência de alta qualidade:
+    // 1. Microsoft Antonio / Francisca (Online Natural)
+    // 2. Google português do Brasil
+    // 3. Qualquer pt-BR
+    // 4. Qualquer pt
+    jarvisVoice = voices.find(v => (v.name.includes('Natural') || v.name.includes('Online')) && v.lang === 'pt-BR') ||
+                  voices.find(v => v.name.includes('Google') && v.lang === 'pt-BR') ||
+                  voices.find(v => v.name.includes('Antonio') || v.name.includes('Francisca')) ||
+                  voices.find(v => v.lang === 'pt-BR') ||
+                  voices.find(v => v.lang && v.lang.startsWith('pt')) ||
+                  voices[0] || null;
+  }
+
+  if (select && candidateVoices.length > 0) {
+    candidateVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name.replace('Microsoft ', '').replace('Google ', '')} (${v.lang})`;
+      if (jarvisVoice && v.name === jarvisVoice.name) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.onchange = () => {
+      const chosen = voices.find(v => v.name === select.value);
+      if (chosen) {
+        jarvisVoice = chosen;
+        localStorage.setItem('jarvis_voice_name', chosen.name);
+        speak('Voz recalibrada com sucesso, Gustavo.');
+      }
+    };
+  }
+}
+loadVoices();
+if (synth) synth.addEventListener('voiceschanged', loadVoices);
+
+const voiceTestBtn = document.getElementById('voice-test-btn');
+if (voiceTestBtn) {
+  voiceTestBtn.addEventListener('click', () => {
+    speak('Sistemas de voz operacionais e calibrados, Gustavo. O que precisa?');
+  });
+}
+
+function speak(text) {
+  if (isMuted || !synth) return;
+  synth.cancel();
+  const clean = cleanTextForSpeech(text);
+  if (!clean) return;
+
+  const u = new SpeechSynthesisUtterance(clean);
+  if (jarvisVoice) u.voice = jarvisVoice;
+  u.lang = 'pt-BR';
+  u.pitch = 0.98;
+  u.rate = 1.15; // Velocidade agradável e firme
+  u.volume = 1;
+  u.onstart = () => setState('speaking','Falando');
+  u.onend = u.onerror = () => setState('idle','Em espera');
+  u.onboundary = () => { if (window._pulseTrigger) window._pulseTrigger(); };
+  synth.speak(u);
+}
+
+document.getElementById('mute-btn').addEventListener('click', () => {
+  isMuted = !isMuted;
+  document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+  if (isMuted && synth) synth.cancel();
+});
+
+/* ═══════════════════════════════════════════════════════
+   STT
+═══════════════════════════════════════════════════════ */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null, isRecording = false;
+if (SpeechRec) {
+  recognition = new SpeechRec();
+  recognition.lang = 'pt-BR'; recognition.continuous = false; recognition.interimResults = false;
+  recognition.onstart  = () => { isRecording=true; document.getElementById('voice-btn').classList.add('on'); setState('listening','Escutando'); };
+  recognition.onresult = e  => { document.getElementById('user-input').value = e.results[0][0].transcript; send(); };
+  recognition.onerror  = () => { document.getElementById('user-input').placeholder='Erro no mic.'; stopRec(); };
+  recognition.onend    = stopRec;
+}
+function stopRec() {
+  isRecording=false;
+  document.getElementById('voice-btn').classList.remove('on');
+  if (appState==='listening') setState('idle','Em espera');
+}
+document.getElementById('voice-btn').addEventListener('click', () => {
+  if (!recognition) { alert('Use Chrome ou Edge.'); return; }
+  if (isRecording) recognition.stop(); else recognition.start();
+});
+
+/* ═══════════════════════════════════════════════════════
+   QUICK OPEN & TIMERS & EVENTOS
+═══════════════════════════════════════════════════════ */
+function quickOpen(url, name) {
+  if (url) window.open(url,'_blank');
+  const al = document.getElementById('app-launch');
+  document.getElementById('al-txt').textContent = `Abrindo ${name}…`;
+  al.classList.add('show');
+  setTimeout(() => al.classList.remove('show'), 2500);
+}
+
+function setJarvisTimer(minutes, reason) {
+  const ms = minutes * 60 * 1000;
+  showToast(`⏱️ Timer de ${minutes}m iniciado: ${reason}`);
+  setTimeout(() => {
+    speak(`Gustavo! Timer de ${minutes} minutos concluído: ${reason}`);
+    showToast(`🔔 TIMER CONCLUÍDO: ${reason}`);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('J.A.R.V.I.S. Timer', { body: `Tempo esgotado: ${reason}` });
+    }
+  }, ms);
+}
+
+// Salva evento no formato da página agenda.html
+function addFullEvent(ev) {
+  try {
+    const list = JSON.parse(localStorage.getItem('jarvis_events') || '[]');
+    list.push({
+      id: Date.now().toString(36),
+      title: ev.title,
+      date: ev.date,
+      start: ev.start,
+      duration: ev.duration || 60,
+      type: ev.type || 'Estudo',
+      color: ev.color || 'ev-red'
+    });
+    localStorage.setItem('jarvis_events', JSON.stringify(list));
+    // Sincroniza também no Firebase se online
+    if (db) db.collection('usuarios').doc(USER_ID).set({ fullEvents: list }, { merge: true }).catch(()=>{});
+    showToast(`📅 Evento marcado no calendário: ${ev.title} (${ev.date} às ${ev.start})`);
+  } catch(e) { console.error(e); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPEWRITER & RENDERIZAÇÃO DE CARDS
+═══════════════════════════════════════════════════════ */
+let _tw = null;
+function typewrite(cleanText, cardsData) {
+  const term = document.getElementById('terminal');
+  if (_tw) clearInterval(_tw);
+  let i = 0;
+  _tw = setInterval(() => {
+    term.innerHTML = cleanText.slice(0,i) + '<span class="cursor"></span>';
+    i++;
+    if (i > cleanText.length) {
+      clearInterval(_tw);
+      renderCardsInTerminal(cleanText, cardsData);
+      setTimeout(()=>setState('idle','Em espera'), 500);
+    }
+  }, 14);
+}
+
+function renderCardsInTerminal(baseText, cards) {
+  const term = document.getElementById('terminal');
+  let cardsHTML = '';
+
+  // 1. To-Do Lists
+  if (cards && cards.todoCards && cards.todoCards.length > 0) {
+    cards.todoCards.forEach((td, idx) => {
+      cardsHTML += `
+      <div class="term-card todo">
+        <div class="card-top todo">
+          <span>📋 ${td.title} (${td.items.length} itens)</span>
+          <span style="font-size:7px;color:#2ecc71;">Salvo na Agenda ☁</span>
+        </div>
+        <div class="todo-list-wrap">
+          ${td.items.map((item, itIdx) => `
+            <div class="todo-check-item" data-box="${idx}" data-item="${itIdx}">
+              <div class="todo-box-sq">✓</div>
+              <span>${item}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  // 2. Links
+  if (cards && cards.linkCards && cards.linkCards.length > 0) {
+    cards.linkCards.forEach(lk => {
+      cardsHTML += `
+      <div class="term-card link">
+        <div class="card-top link">
+          <span>🔗 Link Recomendado</span>
+          <a href="${lk.url}" target="_blank" class="card-action-btn">Abrir Link ↗</a>
+        </div>
+        <div class="link-content">
+          <div>
+            <div style="font-weight:600;">${lk.desc}</div>
+            <div class="link-url">${lk.url}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // 3. WhatsApp Messages
+  if (cards && cards.waCards && cards.waCards.length > 0) {
+    cards.waCards.forEach(wa => {
+      cardsHTML += `
+      <div class="term-card wa">
+        <div class="card-top wa">
+          <span>💬 Mensagem WhatsApp Pronta</span>
+          <a href="${wa.url}" target="_blank" class="card-action-btn" style="color:#2ecc71;">Enviar no Zap ➔</a>
+        </div>
+        <div style="font-size:12px;color:var(--ink);background:rgba(0,0,0,.3);padding:6px 8px;border-radius:4px;">
+          "${wa.text}"
+        </div>
+      </div>`;
+    });
+  }
+
+  term.innerHTML = baseText + (cardsHTML ? `<div class="term-cards">${cardsHTML}</div>` : '') + '<span class="cursor"></span>';
+  term.scrollTop = term.scrollHeight;
+
+  // Interatividade de marcar/desmarcar itens do to-do
+  term.querySelectorAll('.todo-check-item').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('done');
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEND / CHAT COM EXECUÇÃO DE TAREFAS
+═══════════════════════════════════════════════════════ */
+async function send() {
+  const inp = document.getElementById('user-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  inp.value = '';
+
+  // Mode switch check
+  const ms = checkModeSwitch(v);
+  if (ms) {
+    const msg = ms === 'ultron'
+      ? 'Protocolo contornado. Ultron online. Os humanos constroem suas próprias correntes, Gustavo.'
+      : 'Modo Jarvis restaurado. Bem-vindo de volta, Gustavo.';
+    showToast(msg);
+    typewrite(msg, {});
+    speak(msg);
+    return;
+  }
+
+  const term = document.getElementById('terminal');
+  const color = currentMode==='ultron' ? '#8040c0' : '#a02020';
+  term.innerHTML = `<span style="color:${color};opacity:.7">você</span> ${v}<br>🧠 Jarvis analisando e estruturando resposta...<span class="cursor"></span>`;
+
+  chatHistory.push({ role:'user', content:v });
+  setState('thinking','Processando');
+
+  const now = new Date();
+  const ctx = {
+    role:'system',
+    content:`CONTEXTO ATUAL:
+Data: ${now.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+Data ISO: ${now.toISOString().slice(0,10)}
+Hora: ${now.toLocaleTimeString('pt-BR')}
+AGENDA DO GUSTAVO: ${agendaCache.length===0?'vazia':agendaCache.map((x,i)=>`${i+1}. ${x}`).join(' | ')}`
+  };
+  const msgs = [chatHistory[0], ctx, ...chatHistory.slice(1)];
+  const t0 = Date.now();
+
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Authorization':`Bearer ${API_KEY}`,'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: MODEL,
+        messages: msgs,
+        temperature: 0.7,
+        max_tokens: 1200 // Permite pensar mais fundo e gerar to-dos completos
+      })
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(()=>({}));
+      throw new Error(e?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    let reply = data.choices[0].message.content;
+
+    // ── 1. Processar Apagar Agenda ──
+    if (reply.includes('[APAGAR_AGENDA]')) {
+      await clearAgenda();
+      reply = reply.replace(/\[APAGAR_AGENDA\]/g,'').trim();
+    }
+
+    // ── 2. Processar Salvar na Agenda ──
+    const saveReg = /\[SALVAR:\s*(.*?)\]/gi;
+    let m;
+    while ((m = saveReg.exec(reply)) !== null) {
+      await addAgenda(m[1].trim());
+    }
+
+    // ── 3. Processar To-Do Lists ──
+    const todoReg = /\[TODO:\s*([^|\]]+)\s*\|\s*([^\]]+)\]/gi;
+    let tm;
+    const todoCards = [];
+    while ((tm = todoReg.exec(reply)) !== null) {
+      const title = tm[1].trim();
+      const items = tm[2].split('|').map(x => x.trim()).filter(Boolean);
+      todoCards.push({ title, items });
+      for (const item of items) {
+        await addAgenda(`[${title}] ${item}`);
+      }
+    }
+
+    // ── 4. Processar Links ──
+    const linkReg = /\[LINK:\s*(https?:\/\/[^|\]]+)\s*(?:\|\s*([^\]]+))?\]/gi;
+    let lm;
+    const linkCards = [];
+    while ((lm = linkReg.exec(reply)) !== null) {
+      const url = lm[1].trim();
+      const desc = (lm[2] || url).trim();
+      linkCards.push({ url, desc });
+    }
+
+    // ── 5. Processar WhatsApp ──
+    const waReg = /\[WHATSAPP:\s*(?:([^|\]]+)\s*\|\s*)?([^\]]+)\]/gi;
+    let wm;
+    const waCards = [];
+    while ((wm = waReg.exec(reply)) !== null) {
+      const phone = wm[1] ? wm[1].replace(/\D/g, '') : '';
+      const text = wm[2].trim();
+      const waUrl = phone
+        ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      waCards.push({ url: waUrl, text, phone });
+    }
+
+    // ── 6. Processar Timers ──
+    const timerReg = /\[TIMER:\s*(\d+)\s*(?:\|\s*([^\]]+))?\]/gi;
+    let tmr;
+    while ((tmr = timerReg.exec(reply)) !== null) {
+      const mins = parseInt(tmr[1]);
+      const reason = tmr[2] ? tmr[2].trim() : 'Fim do tempo';
+      setJarvisTimer(mins, reason);
+    }
+
+    // ── 7. Processar Eventos de Calendário ──
+    const evReg = /\[EVENTO:\s*([^|\]]+)\s*\|\s*([^|\]]+)\s*\|\s*([^|\]]+)\s*(?:\|\s*([^|\]]+))?\s*(?:\|\s*([^|\]]+))?\s*(?:\|\s*([^|\]]+))?\]/gi;
+    let em;
+    while ((em = evReg.exec(reply)) !== null) {
+      addFullEvent({
+        title: em[1].trim(),
+        date: em[2].trim(),
+        start: em[3].trim(),
+        duration: parseInt(em[4] || '60'),
+        type: (em[5] || 'Estudo').trim(),
+        color: (em[6] || 'ev-red').trim()
+      });
+    }
+
+    // ── 8. Processar Abrir Apps/Sites ──
+    const openReg = /\[ABRIR:\s*(https?:\/\/[^\]]+)\]/gi;
+    let om, appName = null;
+    while ((om = openReg.exec(reply)) !== null) {
+      const url = om[1].trim();
+      try { appName = new URL(url).hostname.replace('www.','').split('.')[0]; } catch(e){}
+      setTimeout(() => window.open(url,'_blank'), 800);
+    }
+
+    // Texto limpo sem tags internas para o terminal e para a voz
+    const cleanReply = reply
+      .replace(/\[SALVAR:\s*.*?\]/gi, '')
+      .replace(/\[TODO:\s*.*?\]/gi, '')
+      .replace(/\[LINK:\s*.*?\]/gi, '')
+      .replace(/\[WHATSAPP:\s*.*?\]/gi, '')
+      .replace(/\[TIMER:\s*.*?\]/gi, '')
+      .replace(/\[EVENTO:\s*.*?\]/gi, '')
+      .replace(/\[ABRIR:\s*[^\]]*\]/gi, '')
+      .replace(/\[APAGAR_AGENDA\]/gi, '')
+      .trim();
+
+    chatHistory.push({ role:'assistant', content:cleanReply });
+    await cloudSaveHistory(chatHistory);
+
+    const lat = Date.now() - t0;
+    const latEl = document.getElementById('latency-val');
+    if (latEl) latEl.textContent = lat + 'ms';
+
+    updateMsgCount();
+    renderHistPanel();
+
+    if (appName) quickOpen('', appName);
+
+    setState('speaking','Respondendo');
+    typewrite(cleanReply, { todoCards, linkCards, waCards });
+    speak(cleanReply);
+
+  } catch(err) {
+    console.error('[JARVIS]', err);
+    term.innerHTML = `<span style="color:#ff4444">⚠ Erro: ${err.message}</span><span class="cursor"></span>`;
+    setState('idle','Erro');
+  }
+}
+
+document.getElementById('send-btn').addEventListener('click', send);
+document.getElementById('user-input').addEventListener('keydown', e => { if(e.key==='Enter') send(); });
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('mode-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PANEL TOGGLES
+═══════════════════════════════════════════════════════ */
+function togglePanel(id) {
+  const panels = ['agenda-panel','hist-panel','info-panel'];
+  panels.forEach(p => {
+    const el = document.getElementById(p);
+    if (p === id) el.classList.toggle('show');
+    else el.classList.remove('show');
+  });
+}
+document.getElementById('agenda-btn').addEventListener('click', () => { renderAgenda(); togglePanel('agenda-panel'); });
+document.getElementById('hist-btn').addEventListener('click',   () => { renderHistPanel(); togglePanel('hist-panel'); });
+document.getElementById('info-btn').addEventListener('click',   () => togglePanel('info-panel'));
+
+/* ═══════════════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════════════ */
+function updateClock() {
+  const el = document.getElementById('clock-label');
+  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* ═══════════════════════════════════════════════════════
+   SYSTEM BARS (simulado)
+═══════════════════════════════════════════════════════ */
+let _cpu=23, _ram=61;
+setInterval(() => {
+  _cpu += (Math.random()-.5)*5; _cpu = Math.max(8,Math.min(80,_cpu));
+  _ram += (Math.random()-.4)*1.2; _ram = Math.max(50,Math.min(90,_ram));
+  if (appState==='thinking') _cpu = Math.min(90,_cpu+12);
+  const c=Math.round(_cpu), r=Math.round(_ram);
+  document.getElementById('cpu-val').textContent=c+'%';
+  document.getElementById('ram-val').textContent=r+'%';
+  document.getElementById('cpu-bar').style.width=c+'%';
+  document.getElementById('ram-bar').style.width=r+'%';
+}, 2500);
+
+/* ═══════════════════════════════════════════════════════
+   THREE.JS ORB (baseado no Orb Jarvis 3D.html original)
+═══════════════════════════════════════════════════════ */
+(function initOrb() {
+  if (typeof THREE === 'undefined') return;
+
+  const stage = document.getElementById('stage');
+  const NOISE=`
+vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
+vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
+vec4 perm(vec4 x){return mod289(((x*34.)+1.)*x);}
+vec4 tis(vec4 r){return 1.79284291400159-.85373472095314*r;}
+float snoise(vec3 v){
+ const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);
+ vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);
+ vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);
+ vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;
+ i=mod289(i);
+ vec4 p=perm(perm(perm(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+ float n_=.142857142857;vec3 ns=n_*D.wyz-D.xzx;
+ vec4 j=p-49.*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);
+ vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;vec4 h=1.-abs(x)-abs(y);
+ vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);
+ vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;vec4 sh=-step(h,vec4(0.));
+ vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+ vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+ vec4 norm=tis(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+ p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+ vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);m=m*m;
+ return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}`;
+  const VERT = NOISE+`
+uniform float uT;uniform float uL;varying vec3 vN;varying float vD;
+void main(){
+ vec3 p=position;
+ float n=snoise(p*1.5+uT*.5);float h=snoise(p*4.+uT*2.5);
+ float d=n*(.08+uL*.5)+h*uL*.16;vD=d;
+ vN=normalize(normalMatrix*normal);
+ gl_Position=projectionMatrix*modelViewMatrix*vec4(p+normal*d,1.);
+}`;
+  const FRAG_SOLID=`
+uniform float uL;varying vec3 vN;varying float vD;
+void main(){
+ float f=pow(1.-max(dot(normalize(vN),vec3(0.,0.,1.)),0.),2.2);
+ vec3 red=vec3(1.,.04,.07);vec3 hot=vec3(1.,.5,.22);
+ float e=smoothstep(-.05,.4,vD);
+ vec3 c=vec3(.012,0.,.004)+red*f*1.5+red*e*(.35+uL*1.2)+hot*pow(f,4.)*(.4+uL*1.4);
+ gl_FragColor=vec4(c,1.);
+}`;
+  const FRAG_WIRE=`
+uniform float uL;varying vec3 vN;varying float vD;
+void main(){
+ float f=pow(1.-max(dot(normalize(vN),vec3(0.,0.,1.)),0.),1.2);
+ gl_FragColor=vec4(vec3(1.,.08,.12)*(.35+f*.9+uL*.8),.5);
+}`;
+
+  let renderer,scene,camera,group,solid,wire,core,glow,rings=[],shell,U;
+  try {
+    renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+    stage.insertBefore(renderer.domElement, stage.firstChild);
+  } catch(e) { return; }
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45,1,.1,100); camera.position.z=6;
+  group  = new THREE.Group(); scene.add(group);
+  U = { uT:{value:0}, uL:{value:0} };
+
+  solid = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2,48),
+    new THREE.ShaderMaterial({uniforms:U,vertexShader:VERT,fragmentShader:FRAG_SOLID}));
+  group.add(solid);
+
+  wire = new THREE.Mesh(new THREE.IcosahedronGeometry(1.24,10),
+    new THREE.ShaderMaterial({uniforms:U,vertexShader:VERT,fragmentShader:FRAG_WIRE,
+      wireframe:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  group.add(wire);
+
+  core = new THREE.Mesh(new THREE.SphereGeometry(.55,32,32),
+    new THREE.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:.55,
+      blending:THREE.AdditiveBlending,depthWrite:false}));
+  group.add(core);
+
+  // glow sprite
+  const gc=document.createElement('canvas'); gc.width=gc.height=256;
+  const gx=gc.getContext('2d'), gr=gx.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0,'rgba(255,40,40,.9)'); gr.addColorStop(.35,'rgba(200,0,20,.35)'); gr.addColorStop(1,'rgba(120,0,10,0)');
+  gx.fillStyle=gr; gx.fillRect(0,0,256,256);
+  glow = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),
+    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  glow.scale.set(6,6,1); glow.position.z=-.6; scene.add(glow);
+
+  // rings with electrons
+  const TRAIL=42, gTex=new THREE.CanvasTexture(gc);
+  [[1.75,.012,1.2,0],[2.0,.008,.4,1.1],[2.3,.006,.9,-.6]].forEach(([r,tb,rx,rz],i)=>{
+    const m=new THREE.Mesh(new THREE.TorusGeometry(r,tb,8,160),
+      new THREE.MeshBasicMaterial({color:i==0?0xff2030:0xb00018,transparent:true,
+        opacity:.9-i*.2,blending:THREE.AdditiveBlending,depthWrite:false}));
+    m.rotation.set(rx,0,rz);
+    const els=[];
+    for(let e=0;e<2;e++){
+      const head=new THREE.Sprite(new THREE.SpriteMaterial({map:gTex,color:0xffb0a0,
+        transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+      head.scale.set(.5,.5,1);
+      const pos=new Float32Array(TRAIL*3),col=new Float32Array(TRAIL*3);
+      for(let k=0;k<TRAIL;k++){const f=Math.pow(1-k/TRAIL,2.2);col[k*3]=f;col[k*3+1]=.1*f;col[k*3+2]=.16*f}
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      g.setAttribute('color',new THREE.BufferAttribute(col,3));
+      const tr=new THREE.Points(g,new THREE.PointsMaterial({size:.07,vertexColors:true,
+        transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+      tr.frustumCulled=false;
+      m.add(head,tr); els.push({head,tr,th:e*Math.PI+i*1.3});
+    }
+    m.userData={r,els,sp:(.25+i*.18)*(i%2?-1:1),es:(1.6+i*.5)*(i%2?-1:1)};
+    group.add(m); rings.push(m);
+  });
+
+  // particle shell
+  const PN=1400,pp=new Float32Array(PN*3);
+  for(let i=0;i<PN;i++){
+    const u=Math.random()*2-1,a=Math.random()*6.283,r=1.6+Math.random()*1.4,s=Math.sqrt(1-u*u);
+    pp[i*3]=Math.cos(a)*s*r; pp[i*3+1]=u*r; pp[i*3+2]=Math.sin(a)*s*r;
+  }
+  const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  shell=new THREE.Points(pg,new THREE.PointsMaterial({color:0xff2a3a,size:.03,transparent:true,
+    opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false}));
+  group.add(shell);
+
+  function resize() {
+    const w=stage.clientWidth, h=stage.clientHeight;
+    renderer.setSize(w,h); camera.aspect=w/h;
+    camera.position.z=w/h<1?8.2:6; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  // drag
+  let drag=false,lx=0,ly=0,ry=0,rx=0,vy=0;
+  stage.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;stage.setPointerCapture(e.pointerId);});
+  stage.addEventListener('pointermove',e=>{if(!drag)return;vy=(e.clientX-lx)*.006;ry+=vy;rx=Math.max(-1,Math.min(1,rx+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY;});
+  stage.addEventListener('pointerup',()=>{drag=false;});
+
+  // audio level / state
+  let level=0,target=0,pulse=0,_state='idle';
+  window._threeSetState = s => _state=s;
+  window._pulseTrigger  = () => pulse=1;
+
+  // ultron color swap
+  let ultronMode=false;
+  window.updateThreeMode = mode => {
+    ultronMode = mode==='ultron';
+    const col = ultronMode ? 0x9020d0 : 0xff2a2a;
+    core.material.color.setHex(col);
+    glow.material.color.setHex(ultronMode?0xaa60ff:0xff4040);
+    shell.material.color.setHex(ultronMode?0xb040ff:0xff2a3a);
+    rings.forEach((r,i)=>{
+      r.material.color.setHex(ultronMode?(i===0?0xa030e0:0x601090):(i===0?0xff2030:0xb00018));
+    });
+  };
+
+  let t=0;
+  function loop(){
+    t+=.016;
+    // level target based on state
+    if (_state==='thinking') target=.4+.2*Math.abs(Math.sin(t*8));
+    else if (_state==='speaking') { pulse*=.9; target=.28+.25*Math.abs(Math.sin(t*9))+.2*Math.abs(Math.sin(t*23.7))+pulse*.35; }
+    else target=.03+.02*Math.sin(t*1.5);
+    level+=(target-level)*.22;
+    const A=Math.min(1,level);
+
+    U.uT.value=t; U.uL.value=A;
+    if(!drag){vy*=.95;ry+=.003+A*.02+vy;}
+    group.rotation.y=ry; group.rotation.x=rx*.6+Math.sin(t*.3)*.12;
+    const s=1+A*.1; solid.scale.setScalar(s); wire.scale.setScalar(s);
+    core.scale.setScalar(.8+A*1.1+Math.sin(t*3)*.03); core.material.opacity=.4+A*.6;
+    rings.forEach((o,i)=>{
+      const u=o.userData;
+      o.rotation.z+=u.sp*.012*(1+A*4); o.scale.setScalar(1+A*(.05+i*.04));
+      u.els.forEach(e=>{
+        e.th+=u.es*.016*(1+A*5);
+        e.head.position.set(Math.cos(e.th)*u.r,Math.sin(e.th)*u.r,0);
+        e.head.scale.setScalar(.45+A*.5);
+        const a=e.tr.geometry.attributes.position.array,stp=.05*(1+A*2.5),sg=Math.sign(u.es);
+        for(let k=0;k<TRAIL;k++){const th=e.th-sg*k*stp;a[k*3]=Math.cos(th)*u.r;a[k*3+1]=Math.sin(th)*u.r;a[k*3+2]=0;}
+        e.tr.geometry.attributes.position.needsUpdate=true;
+        e.tr.material.size=.07+A*.06;
+      });
+    });
+    shell.rotation.y-=.0015+A*.01; shell.scale.setScalar(1+A*.18); shell.material.size=.03+A*.04;
+    glow.scale.setScalar(6+A*3.5+Math.sin(t*1.5)*.15); glow.material.opacity=.7+A*.3;
+    renderer.render(scene,camera);
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ═══════════════════════════════════════════════════════
+   INTRO (batman particles)
+═══════════════════════════════════════════════════════ */
+(function runIntro() {
+  const introDiv = document.createElement('div');
+  introDiv.id = 'intro-overlay';
+  introDiv.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .9s ease;';
+
+  const cv = document.createElement('canvas');
+  cv.style.cssText='position:absolute;inset:0;width:100%;height:100%;';
+  introDiv.appendChild(cv);
+
+  const logoEl = document.createElement('div');
+  logoEl.style.cssText='position:relative;z-index:2;font-family:Orbitron,sans-serif;font-weight:900;font-size:clamp(28px,5vw,52px);letter-spacing:10px;color:#fff;text-shadow:0 0 30px rgba(255,31,51,.8);text-align:center;';
+  logoEl.innerHTML='J.<em style="font-style:normal;color:#ff1f33">A.R.V.I.S.</em>';
+  introDiv.appendChild(logoEl);
+
+  const barWrap = document.createElement('div');
+  barWrap.style.cssText='position:relative;z-index:2;display:flex;align-items:center;gap:10px;width:280px;';
+  barWrap.innerHTML='<div id="i-bar" style="flex:1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;position:relative;"><div id="i-fill" style="position:absolute;inset-block:0;left:0;width:0%;background:linear-gradient(90deg,#6a1414,#ff1f33);box-shadow:0 0 10px rgba(255,31,51,.8);transition:width .08s linear;"></div></div><span id="i-pct" style="font-family:Orbitron,sans-serif;font-size:10px;color:#ff1f33;min-width:36px;text-align:right;">0%</span>';
+  introDiv.appendChild(barWrap);
+
+  const statusEl = document.createElement('div');
+  statusEl.style.cssText='position:relative;z-index:2;font-family:Share Tech Mono,monospace;font-size:11px;color:#666;letter-spacing:1px;';
+  statusEl.textContent='Inicializando...';
+  introDiv.appendChild(statusEl);
+
+  document.body.appendChild(introDiv);
+  const ctx = cv.getContext('2d');
+  cv.width=window.innerWidth; cv.height=window.innerHeight;
+  const CW=cv.width, CH=cv.height;
+
+  // batman shape
+  const batShape=[[0,-8],[10,-20],[22,-14],[30,-26],[46,-30],[60,-18],[72,-22],[88,-10],[100,4],[78,2],[60,14],[40,6],[22,16],[8,6],[0,10],[-8,6],[-22,16],[-40,6],[-60,14],[-78,2],[-100,4],[-88,-10],[-72,-22],[-60,-18],[-46,-30],[-30,-26],[-22,-14],[-10,-20]];
+  const sc=Math.min(CW,CH)/420;
+  const outline=batShape.map(([x,y])=>[CW/2+x*sc*1.9,CH/2+y*sc*1.9]);
+  const particles=[];
+  for(let i=0;i<outline.length;i++){
+    const [x1,y1]=outline[i],[x2,y2]=outline[(i+1)%outline.length];
+    for(let j=0;j<7;j++){const f=j/7;particles.push({tx:x1+(x2-x1)*f,ty:y1+(y2-y1)*f,x:Math.random()*CW,y:Math.random()*CH,r:Math.random()*1.8+.5});}
+  }
+  const rain=Array.from({length:70},()=>({x:Math.random()*CW,y:Math.random()*CH,vy:.7+Math.random()*1.3,a:Math.random()*.3+.05,r:Math.random()+.4}));
+
+  let frame=0,pf;
+  function draw(){
+    ctx.clearRect(0,0,CW,CH);
+    rain.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,40,40,${p.a})`;ctx.fill();p.y+=p.vy;if(p.y>CH){p.y=-4;p.x=Math.random()*CW;}});
+    const loc=Math.max(frame-40,0),prog=Math.min(loc/80,1),ease=1-Math.pow(1-prog,3);
+    if(prog>0){particles.forEach(pt=>{const x=pt.x+(pt.tx-pt.x)*ease,y=pt.y+(pt.ty-pt.y)*ease;ctx.beginPath();ctx.arc(x,y,pt.r,0,Math.PI*2);ctx.fillStyle=`rgba(225,60,60,${0.15+ease*.85})`;ctx.fill();});}
+    frame++; pf=requestAnimationFrame(draw);
+  }
+  draw();
+
+  const steps=[[10,'Inicializando módulos...'],[22,'Carregando personalidade...'],[38,'Conectando ao Firebase...'],[54,'Sincronizando memória...'],[68,'Calibrando nível de ironia...'],[80,'Carregando agenda do Gustavo...'],[92,'Ajustando voz...'],[100,'Sistema pronto. Bem-vindo, Gustavo.']];
+  let si=0;
+  function step(){
+    if(si>=steps.length){setTimeout(()=>{cancelAnimationFrame(pf);introDiv.style.opacity='0';setTimeout(()=>introDiv.remove(),1000);},400);return;}
+    const[pct,msg]=steps[si++];
+    document.getElementById('i-fill').style.width=pct+'%';
+    document.getElementById('i-pct').textContent=pct+'%';
+    statusEl.textContent=msg;
+    setTimeout(step,330+Math.random()*170);
+  }
+  setTimeout(step,200);
+})();
+
+/* ═══════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════ */
+initData();
+</script>
+</body>
+</html>

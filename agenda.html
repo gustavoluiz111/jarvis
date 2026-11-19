@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S. — Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   BASE
+═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --red:    #c92e2e;
+  --red2:   #ff4444;
+  --red-g:  rgba(200,46,46,0.6);
+  --red-s:  rgba(200,46,46,0.14);
+  --blue:   #1a6fff;
+  --blue2:  #4d9aff;
+  --blue-s: rgba(26,111,255,0.15);
+  --bg:     #030303;
+  --s1:     rgba(14,10,10,0.9);
+  --s2:     rgba(10,10,16,0.85);
+  --border: rgba(200,50,50,0.2);
+  --bblue:  rgba(26,111,255,0.2);
+  --text:   #d0d0d0;
+  --dim:    #666;
+  --white:  #f0f0f0;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  min-height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+/* grid background */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(200,46,46,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,46,46,0.04) 1px,transparent 1px);
+  background-size:38px 38px;
+  pointer-events:none;z-index:0;
+}
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+.ag-header{
+  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;
+  border-bottom:1px solid var(--border);
+  background:rgba(5,3,3,0.95);
+  backdrop-filter:blur(16px);
+  flex-shrink:0;
+}
+.ag-header::after{
+  content:'';position:absolute;bottom:-1px;left:0;
+  width:80px;height:1px;
+  background:var(--red);
+  box-shadow:0 0 10px var(--red-g);
+  animation:scan-h 5s ease-in-out infinite alternate;
+}
+@keyframes scan-h{from{left:0}to{left:calc(100% - 80px)}}
+
+.ag-brand{
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;font-size:14px;letter-spacing:5px;
+  color:#d0d0d0;
+}
+.ag-brand em{font-style:normal;color:var(--red);text-shadow:0 0 10px var(--red-g);}
+
+.ag-nav{display:flex;align-items:center;gap:8px;}
+.tab-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;
+  padding:7px 16px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--dim);
+  transition:all .2s;
+}
+.tab-btn.active{
+  background:var(--red);border-color:var(--red);
+  color:#fff;box-shadow:0 0 14px var(--red-g);
+}
+.tab-btn:hover:not(.active){background:var(--red-s);color:var(--text);}
+
+.back-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;
+  padding:7px 14px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--bblue);background:transparent;color:var(--blue2);
+  text-decoration:none;display:flex;align-items:center;gap:6px;
+  transition:all .2s;
+}
+.back-btn:hover{background:var(--blue-s);box-shadow:0 0 10px rgba(26,111,255,.3);}
+
+/* ═══════════════════════════════════════
+   BODY LAYOUT
+═══════════════════════════════════════ */
+.ag-body{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:270px 1fr;
+  flex:1;overflow:hidden;
+}
+
+/* ═══════════════════════════════════════
+   LEFT PANEL
+═══════════════════════════════════════ */
+.ag-left{
+  display:flex;flex-direction:column;gap:14px;
+  padding:16px 14px;
+  border-right:1px solid var(--border);
+  background:rgba(8,4,4,0.6);
+  overflow-y:auto;
+}
+
+/* ─── mini calendar ─── */
+.mini-cal{
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--s1);
+  backdrop-filter:blur(12px);
+  overflow:hidden;
+}
+.cal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--border);
+}
+.cal-month{
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;letter-spacing:2px;color:var(--white);
+}
+.cal-nav{display:flex;gap:4px;}
+.cal-nav button{
+  width:22px;height:22px;border-radius:3px;
+  background:transparent;border:1px solid var(--border);
+  color:var(--dim);font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.cal-nav button:hover{background:var(--red-s);border-color:var(--red);color:var(--text);}
+
+.cal-grid{padding:10px 12px 12px;}
+.cal-dows{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  margin-bottom:6px;
+}
+.cal-dow{
+  font-family:'Orbitron',sans-serif;
+  font-size:7px;letter-spacing:1px;
+  text-align:center;color:var(--dim);padding:2px 0;
+}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-day{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-size:12px;border-radius:50%;cursor:pointer;
+  color:var(--text);transition:all .2s;position:relative;
+}
+.cal-day:hover{background:var(--red-s);}
+.cal-day.today{
+  background:var(--red);color:#fff;
+  box-shadow:0 0 10px var(--red-g);
+  font-weight:700;
+}
+.cal-day.selected{
+  border:1px solid var(--blue);
+  color:var(--blue2);box-shadow:0 0 8px rgba(26,111,255,.3);
+}
+.cal-day.other-month{color:#333;}
+.cal-day.has-event::after{
+  content:'';position:absolute;bottom:3px;
+  width:4px;height:4px;border-radius:50%;
+  background:var(--blue);
+}
+.cal-day.today.has-event::after{background:#fff;}
+
+/* ─── checklist panels ─── */
+.ag-panel{
+  border:1px solid var(--border);border-radius:8px;
+  background:var(--s1);backdrop-filter:blur(12px);overflow:hidden;
+}
+.ag-panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--border);
+}
+.ag-panel-title{
+  font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;
+  color:var(--white);
+}
+.ag-panel-body{padding:8px 14px 12px;}
+
+/* checklist item */
+.check-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:13px;cursor:pointer;user-select:none;transition:opacity .2s;
+}
+.check-item:last-child{border-bottom:none;}
+.check-item.done{opacity:.45;text-decoration:line-through;color:var(--dim);}
+.check-circle{
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;
+  border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.check-item.done .check-circle{
+  background:var(--blue);border-color:var(--blue);
+  box-shadow:0 0 6px rgba(26,111,255,.5);
+}
+.check-circle svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:2.5;}
+.check-label{flex:1;line-height:1.3;}
+
+/* add input inline */
+.add-task-row{
+  display:flex;gap:6px;margin-top:10px;
+}
+.add-task-input{
+  flex:1;background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);border-radius:4px;
+  padding:6px 10px;color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;
+}
+.add-task-input:focus{border-color:var(--blue);box-shadow:0 0 8px rgba(26,111,255,.2);}
+.add-task-input::placeholder{color:rgba(200,200,200,.2);}
+.add-task-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;
+  padding:6px 10px;border-radius:4px;cursor:pointer;
+  background:var(--blue-s);border:1px solid var(--bblue);
+  color:var(--blue2);transition:all .2s;white-space:nowrap;
+}
+.add-task-btn:hover{background:var(--blue);color:#fff;box-shadow:0 0 10px rgba(26,111,255,.4);}
+
+/* ═══════════════════════════════════════
+   RIGHT: TIMELINE
+═══════════════════════════════════════ */
+.ag-right{
+  display:flex;flex-direction:column;overflow:hidden;
+  background:rgba(5,3,3,0.3);
+}
+
+/* timeline topbar */
+.tl-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px 12px;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,4,4,0.5);
+  flex-shrink:0;
+}
+.tl-range{
+  font-family:'Orbitron',sans-serif;font-size:12px;
+  letter-spacing:2px;color:var(--white);
+}
+.tl-actions{display:flex;align-items:center;gap:10px;}
+.tl-today-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;
+  padding:6px 14px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text);transition:all .2s;
+}
+.tl-today-btn:hover{background:var(--red-s);border-color:var(--red);}
+.tl-wk-nav{display:flex;gap:4px;}
+.tl-wk-nav button{
+  width:28px;height:28px;border-radius:4px;
+  background:transparent;border:1px solid var(--border);
+  color:var(--dim);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.tl-wk-nav button:hover{background:var(--red-s);border-color:var(--red);color:var(--text);}
+
+/* add event btn */
+.add-event-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1.5px;
+  padding:7px 14px;border-radius:4px;cursor:pointer;
+  background:var(--red);border:1px solid var(--red);
+  color:#fff;transition:all .2s;
+  box-shadow:0 0 10px var(--red-g);
+  display:flex;align-items:center;gap:6px;
+}
+.add-event-btn:hover{background:#a52020;box-shadow:0 0 16px var(--red-g);}
+
+/* day headers */
+.tl-days-header{
+  display:grid;
+  grid-template-columns:52px repeat(7,1fr);
+  border-bottom:1px solid var(--border);
+  background:rgba(8,4,4,0.5);
+  flex-shrink:0;
+}
+.tl-day-col-head{
+  text-align:center;padding:10px 4px;
+  border-left:1px solid rgba(255,255,255,0.04);
+}
+.tl-day-col-head:first-child{border-left:none;}
+.tl-day-name{
+  font-family:'Orbitron',sans-serif;
+  font-size:8px;letter-spacing:1.5px;color:var(--dim);
+  text-transform:uppercase;
+}
+.tl-day-num{
+  font-family:'Orbitron',sans-serif;
+  font-size:18px;font-weight:600;
+  color:var(--text);margin-top:3px;
+  transition:color .2s;
+}
+.tl-day-col-head.today .tl-day-num{
+  color:var(--red);text-shadow:0 0 10px var(--red-g);
+}
+.tl-day-col-head.today .tl-day-name{color:var(--red);}
+
+/* timeline scroll area */
+.tl-scroll{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+
+/* grid rows */
+.tl-grid{
+  display:grid;
+  grid-template-columns:52px repeat(7,1fr);
+  position:relative;
+  min-height:900px;
+}
+.tl-hour-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--dim);
+  padding:0 8px;
+  text-align:right;
+  position:relative;top:-7px;
+  user-select:none;
+}
+.tl-hour-label.empty{pointer-events:none;}
+.tl-col{
+  border-left:1px solid rgba(255,255,255,0.04);
+  position:relative;
+}
+/* hour lines */
+.tl-hour-line{
+  position:absolute;left:0;right:0;
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+/* half-hour lines */
+.tl-half-line{
+  position:absolute;left:0;right:0;
+  border-top:1px dashed rgba(255,255,255,0.025);
+}
+
+/* ─── EVENT BLOCKS ─── */
+.ev-block{
+  position:absolute;
+  left:3px;right:3px;
+  border-radius:6px;
+  padding:7px 8px;
+  cursor:pointer;
+  overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+  z-index:2;
+}
+.ev-block:hover{transform:scale(1.02);z-index:3;}
+.ev-block.ev-red{
+  background:linear-gradient(135deg,rgba(120,20,20,0.95),rgba(180,30,30,0.9));
+  border:1px solid rgba(200,50,50,0.5);
+  box-shadow:0 0 10px rgba(180,30,30,0.3);
+}
+.ev-block.ev-red:hover{box-shadow:0 0 18px rgba(200,46,46,0.5);}
+.ev-block.ev-blue{
+  background:linear-gradient(135deg,rgba(10,50,120,0.95),rgba(20,80,200,0.9));
+  border:1px solid rgba(26,111,255,0.4);
+  box-shadow:0 0 10px rgba(26,111,255,0.2);
+}
+.ev-block.ev-blue:hover{box-shadow:0 0 18px rgba(26,111,255,0.4);}
+.ev-block.ev-dark{
+  background:linear-gradient(135deg,rgba(8,8,20,0.95),rgba(20,20,50,0.9));
+  border:1px solid rgba(50,70,150,0.3);
+}
+.ev-title{
+  font-family:'Rajdhani',sans-serif;font-weight:600;
+  font-size:12px;color:#fff;line-height:1.2;
+}
+.ev-time{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:rgba(255,255,255,0.65);
+  margin-top:3px;
+}
+.ev-delete{
+  position:absolute;top:4px;right:5px;
+  background:transparent;border:none;
+  color:rgba(255,255,255,0.3);font-size:14px;
+  cursor:pointer;line-height:1;padding:0;
+  transition:color .2s;
+}
+.ev-delete:hover{color:rgba(255,100,100,0.9);}
+
+/* now line */
+.now-line{
+  position:absolute;left:0;right:0;
+  border-top:1.5px solid var(--red);
+  z-index:5;pointer-events:none;
+}
+.now-line::before{
+  content:'';position:absolute;left:0;top:-4px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 8px var(--red-g);
+}
+
+/* ═══════════════════════════════════════
+   MODAL — Add Event
+═══════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{
+  background:rgba(10,6,6,0.98);
+  border:1px solid var(--border);
+  border-radius:10px;padding:28px 28px 24px;
+  width:400px;max-width:92vw;
+  box-shadow:0 0 60px rgba(0,0,0,0.8),0 0 20px rgba(200,46,46,0.1);
+  transform:translateY(16px);transition:transform .25s;
+}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-title{
+  font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:3px;
+  color:var(--white);margin-bottom:20px;
+}
+.modal-row{margin-bottom:14px;}
+.modal-label{
+  font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:1.5px;
+  color:var(--dim);margin-bottom:5px;text-transform:uppercase;
+}
+.modal-input, .modal-select{
+  width:100%;background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);border-radius:5px;
+  padding:9px 12px;color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;
+}
+.modal-input:focus,.modal-select:focus{border-color:var(--blue);box-shadow:0 0 8px rgba(26,111,255,.2);}
+.modal-select{cursor:pointer;}
+.modal-select option{background:#0a0608;}
+.modal-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+
+.color-pick{display:flex;gap:8px;margin-top:4px;}
+.color-dot{
+  width:22px;height:22px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;
+}
+.color-dot.selected{border-color:#fff;transform:scale(1.2);}
+.color-dot.c-red{background:var(--red);}
+.color-dot.c-blue{background:var(--blue);}
+.color-dot.c-dark{background:#1a1a3a;}
+
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.btn-cancel{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;
+  padding:8px 16px;border-radius:4px;cursor:pointer;
+  background:transparent;border:1px solid var(--border);color:var(--dim);
+  transition:all .2s;
+}
+.btn-cancel:hover{border-color:var(--text);color:var(--text);}
+.btn-save{
+  font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;
+  padding:8px 20px;border-radius:4px;cursor:pointer;
+  background:var(--red);border:1px solid var(--red);color:#fff;
+  box-shadow:0 0 10px var(--red-g);transition:all .2s;
+}
+.btn-save:hover{background:#a52020;}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media(max-width:820px){
+  .ag-body{grid-template-columns:1fr;}
+  .ag-left{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="ag-header">
+  <div class="ag-brand">J.<em>A.R.V.I.S.</em> <span style="font-size:9px;letter-spacing:3px;opacity:.5;margin-left:8px">AGENDA</span></div>
+  <div class="ag-nav">
+    <button class="tab-btn active" data-view="week">Semana</button>
+    <button class="tab-btn" data-view="day">Dia</button>
+  </div>
+  <a href="index.html" class="back-btn">← Voltar ao Sistema</a>
+</header>
+
+<!-- BODY -->
+<div class="ag-body">
+
+  <!-- LEFT PANEL -->
+  <div class="ag-left">
+
+    <!-- Mini Calendar -->
+    <div class="mini-cal">
+      <div class="cal-head">
+        <div class="cal-month" id="cal-month-label">Janeiro 2026</div>
+        <div class="cal-nav">
+          <button id="cal-prev">‹</button>
+          <button id="cal-next">›</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-dows">
+          <div class="cal-dow">S</div><div class="cal-dow">T</div>
+          <div class="cal-dow">Q</div><div class="cal-dow">Q</div>
+          <div class="cal-dow">S</div><div class="cal-dow">S</div>
+          <div class="cal-dow">D</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+    </div>
+
+    <!-- Checklist: Jarvis Agenda (simple strings) -->
+    <div class="ag-panel">
+      <div class="ag-panel-head">
+        <div class="ag-panel-title">📋 Minha Agenda</div>
+      </div>
+      <div class="ag-panel-body">
+        <div id="checklist-items"></div>
+        <div class="add-task-row">
+          <input class="add-task-input" id="new-task-input" placeholder="Nova tarefa..." />
+          <button class="add-task-btn" id="new-task-btn">+ ADD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checklist: Events this week -->
+    <div class="ag-panel">
+      <div class="ag-panel-head">
+        <div class="ag-panel-title" style="color:var(--blue2)">📅 Esta Semana</div>
+      </div>
+      <div class="ag-panel-body">
+        <div id="week-event-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: TIMELINE -->
+  <div class="ag-right">
+
+    <!-- top bar -->
+    <div class="tl-topbar">
+      <div class="tl-range" id="tl-range">-- a --</div>
+      <div class="tl-actions">
+        <button class="tl-today-btn" id="tl-today-btn">HOJE</button>
+        <div class="tl-wk-nav">
+          <button id="wk-prev">‹</button>
+          <button id="wk-next">›</button>
+        </div>
+        <button class="add-event-btn" id="add-event-btn">+ EVENTO</button>
+      </div>
+    </div>
+
+    <!-- day headers -->
+    <div class="tl-days-header" id="tl-days-header">
+      <div style="border:none"></div>
+      <!-- filled by JS -->
+    </div>
+
+    <!-- scroll timeline -->
+    <div class="tl-scroll" id="tl-scroll">
+      <div class="tl-grid" id="tl-grid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">◈ NOVO EVENTO</div>
+    <div class="modal-row">
+      <div class="modal-label">Título</div>
+      <input class="modal-input" id="ev-title" placeholder="ex: Prova de Física" />
+    </div>
+    <div class="modal-row-2">
+      <div>
+        <div class="modal-label">Data</div>
+        <input class="modal-input" id="ev-date" type="date" />
+      </div>
+      <div>
+        <div class="modal-label">Hora início</div>
+        <input class="modal-input" id="ev-start" type="time" value="08:00"/>
+      </div>
+    </div>
+    <div class="modal-row-2">
+      <div>
+        <div class="modal-label">Duração (min)</div>
+        <select class="modal-select" id="ev-dur">
+          <option value="30">30 min</option>
+          <option value="60" selected>1h</option>
+          <option value="90">1h30</option>
+          <option value="120">2h</option>
+          <option value="180">3h</option>
+        </select>
+      </div>
+      <div>
+        <div class="modal-label">Tipo</div>
+        <select class="modal-select" id="ev-type">
+          <option value="Estudo">Estudo</option>
+          <option value="Prova">Prova</option>
+          <option value="Treino">Treino</option>
+          <option value="Trabalho">Trabalho</option>
+          <option value="Pessoal">Pessoal</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Cor</div>
+      <div class="color-pick">
+        <div class="color-dot c-red selected" data-color="ev-red"></div>
+        <div class="color-dot c-blue" data-color="ev-blue"></div>
+        <div class="color-dot c-dark" data-color="ev-dark"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">CANCELAR</button>
+      <button class="btn-save" id="modal-save">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════ */
+function getEvents() { return JSON.parse(localStorage.getItem('jarvis_events') || '[]'); }
+function saveEvents(evs) { localStorage.setItem('jarvis_events', JSON.stringify(evs)); }
+function getChecklist() { return JSON.parse(localStorage.getItem('jarvis_agenda') || '[]'); }
+function saveChecklist(arr) { localStorage.setItem('jarvis_agenda', JSON.stringify(arr)); }
+
+/* ═══════════════════════════════════════════════
+   DATE HELPERS
+═══════════════════════════════════════════════ */
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAYS_PT   = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
+function toYMD(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function formatRange(start, end) {
+  const s = `${start.getDate()} ${MONTHS_PT[start.getMonth()].slice(0,3).toUpperCase()}`;
+  const e = `${end.getDate()} ${MONTHS_PT[end.getMonth()].slice(0,3).toUpperCase()} ${end.getFullYear()}`;
+  return `${s} — ${e}`;
+}
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=sun
+  const diff = day === 0 ? -6 : 1 - day; // go to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function todayYMD() { return toYMD(new Date()); }
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let currentWeekStart = getWeekStart(new Date());
+let calViewDate = new Date();
+let selectedColor = 'ev-red';
+const HOUR_HEIGHT = 60; // px per hour
+const START_HOUR  = 7;
+const END_HOUR    = 22;
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+
+/* ═══════════════════════════════════════════════
+   MINI CALENDAR
+═══════════════════════════════════════════════ */
+function renderMiniCal() {
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  document.getElementById('cal-month-label').textContent = `${MONTHS_PT[m]} ${y}`;
+
+  const firstDay = new Date(y, m, 1);
+  const lastDay  = new Date(y, m+1, 0);
+  // Monday-first: 0=Mon..6=Sun
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = startDow === 0 ? 6 : startDow - 1; // convert to Mon=0
+
+  const events = getEvents();
+  const eventDays = new Set(events.map(e => e.date));
+  const todayStr  = todayYMD();
+
+  const grid = document.getElementById('cal-days');
+  grid.innerHTML = '';
+
+  // Pad start
+  for (let i = 0; i < startDow; i++) {
+    const prev = new Date(y, m, -startDow + i + 1);
+    const d = document.createElement('div');
+    d.className = 'cal-day other-month';
+    d.textContent = prev.getDate();
+    grid.appendChild(d);
+  }
+
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const dateObj = new Date(y, m, day);
+    const dateStr = toYMD(dateObj);
+    const d = document.createElement('div');
+    d.className = 'cal-day';
+    if (dateStr === todayStr) d.classList.add('today');
+    if (eventDays.has(dateStr)) d.classList.add('has-event');
+    d.textContent = day;
+    d.addEventListener('click', () => {
+      currentWeekStart = getWeekStart(dateObj);
+      renderTimeline();
+    });
+    grid.appendChild(d);
+  }
+
+  // Pad end to 42 slots
+  const totalSlots = startDow + lastDay.getDate();
+  const remaining = totalSlots % 7 === 0 ? 0 : 7 - (totalSlots % 7);
+  for (let i = 1; i <= remaining; i++) {
+    const d = document.createElement('div');
+    d.className = 'cal-day other-month';
+    d.textContent = i;
+    grid.appendChild(d);
+  }
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()-1, 1);
+  renderMiniCal();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()+1, 1);
+  renderMiniCal();
+});
+
+/* ═══════════════════════════════════════════════
+   CHECKLIST
+═══════════════════════════════════════════════ */
+function renderChecklist() {
+  const items = getChecklist();
+  const doneSet = JSON.parse(localStorage.getItem('jarvis_done') || '[]');
+  const el = document.getElementById('checklist-items');
+  if (!el) return;
+  if (items.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--dim);padding:4px 0;">Nenhuma tarefa salva.</div>';
+    return;
+  }
+  el.innerHTML = items.map((item, i) => {
+    const done = doneSet.includes(i);
+    return `<div class="check-item ${done?'done':''}" data-idx="${i}">
+      <div class="check-circle">
+        ${done ? `<svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>` : ''}
+      </div>
+      <div class="check-label">${item}</div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.check-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx);
+      const done = JSON.parse(localStorage.getItem('jarvis_done') || '[]');
+      const pos = done.indexOf(idx);
+      if (pos === -1) done.push(idx); else done.splice(pos, 1);
+      localStorage.setItem('jarvis_done', JSON.stringify(done));
+      renderChecklist();
+    });
+  });
+}
+
+document.getElementById('new-task-btn').addEventListener('click', () => {
+  const inp = document.getElementById('new-task-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  const arr = getChecklist();
+  arr.push(v);
+  saveChecklist(arr);
+  inp.value = '';
+  renderChecklist();
+});
+document.getElementById('new-task-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('new-task-btn').click();
+});
+
+/* ═══════════════════════════════════════════════
+   WEEK EVENT LIST (sidebar)
+═══════════════════════════════════════════════ */
+function renderWeekEventList() {
+  const el = document.getElementById('week-event-list');
+  if (!el) return;
+  const evs = getEvents();
+  const ws  = currentWeekStart;
+  const we  = addDays(ws, 6);
+  const inWeek = evs.filter(e => e.date >= toYMD(ws) && e.date <= toYMD(we));
+  if (inWeek.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--dim);padding:4px 0;">Sem eventos esta semana.</div>';
+    return;
+  }
+  el.innerHTML = inWeek.sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(e => {
+    const dot = e.color === 'ev-blue' ? '#1a6fff' : '#c92e2e';
+    return `<div class="check-item" style="cursor:default;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;box-shadow:0 0 6px ${dot}55;"></div>
+      <div class="check-label" style="font-size:12px;">
+        <div>${e.title}</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;">${e.date.slice(5)} · ${e.start}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   TIMELINE
+═══════════════════════════════════════════════ */
+function renderTimeline() {
+  const ws = currentWeekStart;
+  const we = addDays(ws, 6);
+  document.getElementById('tl-range').textContent = formatRange(ws, we);
+
+  // Day headers
+  const hdr = document.getElementById('tl-days-header');
+  hdr.innerHTML = '<div style="border:none"></div>';
+  const todayStr = todayYMD();
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i);
+    const dStr = toYMD(d);
+    const isToday = dStr === todayStr;
+    const col = document.createElement('div');
+    col.className = 'tl-day-col-head' + (isToday ? ' today' : '');
+    col.dataset.date = dStr;
+    col.innerHTML = `<div class="tl-day-name">${DAYS_PT[i]}</div>
+                     <div class="tl-day-num">${d.getDate()}</div>`;
+    hdr.appendChild(col);
+  }
+
+  // Grid
+  buildGrid();
+  renderWeekEventList();
+  renderMiniCal();
+
+  // Scroll to 7am
+  setTimeout(() => {
+    const scroll = document.getElementById('tl-scroll');
+    scroll.scrollTop = START_HOUR * HOUR_HEIGHT;
+  }, 50);
+}
+
+function buildGrid() {
+  const grid = document.getElementById('tl-grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `52px repeat(7,1fr)`;
+  grid.style.minHeight = `${TOTAL_HOURS * HOUR_HEIGHT + 40}px`;
+
+  // Hour labels + lines (left col + 7 day cols)
+  for (let h = START_HOUR; h <= END_HOUR; h++) {
+    const label = document.createElement('div');
+    label.className = 'tl-hour-label';
+    label.style.gridColumn = '1';
+    label.style.gridRow = String(h - START_HOUR + 1);
+    label.style.height = HOUR_HEIGHT + 'px';
+    label.textContent = h < 10 ? `0${h}h` : `${h}h`;
+    grid.appendChild(label);
+
+    for (let col = 0; col < 7; col++) {
+      const cell = document.createElement('div');
+      cell.className = 'tl-col';
+      cell.style.gridColumn = String(col + 2);
+      cell.style.gridRow = String(h - START_HOUR + 1);
+      cell.style.height = HOUR_HEIGHT + 'px';
+
+      // Hour line
+      const line = document.createElement('div');
+      line.className = 'tl-hour-line';
+      cell.appendChild(line);
+
+      // Half-hour line
+      const half = document.createElement('div');
+      half.className = 'tl-half-line';
+      half.style.top = '50%';
+      cell.appendChild(half);
+
+      // Click to add event
+      const d = addDays(currentWeekStart, col);
+      const dateStr = toYMD(d);
+      cell.addEventListener('click', () => openModal(dateStr, h));
+
+      grid.appendChild(cell);
+    }
+  }
+
+  // Now line
+  placeNowLine(grid);
+
+  // Events
+  const events = getEvents();
+  const ws = currentWeekStart;
+  events.forEach(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    const ws2 = new Date(ws);
+    const diff = Math.round((d - ws2) / 86400000);
+    if (diff < 0 || diff > 6) return;
+    placeEvent(ev, diff, grid);
+  });
+}
+
+function placeNowLine(grid) {
+  const now   = new Date();
+  const hour  = now.getHours() + now.getMinutes() / 60;
+  if (hour < START_HOUR || hour > END_HOUR) return;
+  const todayStr = todayYMD();
+  const ws = currentWeekStart;
+  let col = -1;
+  for (let i = 0; i < 7; i++) {
+    if (toYMD(addDays(ws, i)) === todayStr) { col = i; break; }
+  }
+  if (col < 0) return;
+
+  const top = (hour - START_HOUR) * HOUR_HEIGHT;
+  const line = document.createElement('div');
+  line.className = 'now-line';
+  line.style.position = 'absolute';
+  line.style.top = top + 'px';
+  line.style.left = `calc(${(col+1)/8 * 100}%)`;
+  line.style.width = `${1/8 * 100}%`;
+  line.style.zIndex = '5';
+  grid.appendChild(line);
+}
+
+function placeEvent(ev, colIndex, grid) {
+  const [sh, sm] = ev.start.split(':').map(Number);
+  const startH = sh + sm / 60;
+  if (startH < START_HOUR || startH > END_HOUR) return;
+
+  const top  = (startH - START_HOUR) * HOUR_HEIGHT;
+  const height = Math.max(((ev.duration || 60) / 60) * HOUR_HEIGHT - 4, 24);
+
+  const block = document.createElement('div');
+  block.className = `ev-block ${ev.color || 'ev-red'}`;
+  block.style.top    = top + 'px';
+  block.style.height = height + 'px';
+  block.style.position = 'absolute';
+
+  // Calculate grid position
+  const gridCol = colIndex + 2; // col 1 is label
+  const gridRow = Math.floor(startH - START_HOUR) + 1;
+
+  // We place it inside the correct column cell
+  // Find the cell
+  const cells = grid.querySelectorAll('.tl-col');
+  // cells are ordered: 7 cols per hour row
+  const cellIdx = Math.floor(startH - START_HOUR) * 7 + colIndex;
+  const targetCell = cells[cellIdx];
+
+  if (!targetCell) return;
+
+  block.innerHTML = `<div class="ev-title">${ev.title}</div>
+    <div class="ev-time">${ev.start} · ${ev.type || 'Evento'}</div>
+    <button class="ev-delete" data-id="${ev.id}">×</button>`;
+  targetCell.style.position = 'relative';
+  targetCell.appendChild(block);
+
+  block.querySelector('.ev-delete').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const evs = getEvents().filter(x => x.id !== ev.id);
+    saveEvents(evs);
+    renderTimeline();
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+const modal = document.getElementById('modal');
+
+function openModal(dateStr, hour) {
+  document.getElementById('ev-date').value = dateStr || todayYMD();
+  document.getElementById('ev-start').value = `${String(hour).padStart(2,'0')}:00`;
+  document.getElementById('ev-title').value = '';
+  modal.classList.add('show');
+  setTimeout(() => document.getElementById('ev-title').focus(), 100);
+}
+
+document.getElementById('add-event-btn').addEventListener('click', () => openModal(todayYMD(), 8));
+document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.remove('show'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
+
+// Color picker
+document.querySelectorAll('.color-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+    dot.classList.add('selected');
+    selectedColor = dot.dataset.color;
+  });
+});
+
+document.getElementById('modal-save').addEventListener('click', () => {
+  const title = document.getElementById('ev-title').value.trim();
+  const date  = document.getElementById('ev-date').value;
+  const start = document.getElementById('ev-start').value;
+  const dur   = parseInt(document.getElementById('ev-dur').value);
+  const type  = document.getElementById('ev-type').value;
+  if (!title || !date || !start) return;
+
+  const evs = getEvents();
+  evs.push({ id: Date.now().toString(36), title, date, start, duration: dur, type, color: selectedColor });
+  saveEvents(evs);
+  modal.classList.remove('show');
+  renderTimeline();
+});
+
+/* keyboard shortcut */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('show'); });
+
+/* ═══════════════════════════════════════════════
+   WEEK NAV
+═══════════════════════════════════════════════ */
+document.getElementById('wk-prev').addEventListener('click', () => {
+  currentWeekStart = addDays(currentWeekStart, -7);
+  renderTimeline();
+});
+document.getElementById('wk-next').addEventListener('click', () => {
+  currentWeekStart = addDays(currentWeekStart, 7);
+  renderTimeline();
+});
+document.getElementById('tl-today-btn').addEventListener('click', () => {
+  currentWeekStart = getWeekStart(new Date());
+  renderTimeline();
+});
+
+/* ═══════════════════════════════════════════════
+   TABS (week / day)
+═══════════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // day view: set week to single day (todo: implement properly)
+    renderTimeline();
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+renderMiniCal();
+renderChecklist();
+renderTimeline();
+
+// Auto-refresh now line
+setInterval(() => { buildGrid(); }, 60000);
+</script>
+</body>
+</html>
